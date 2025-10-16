@@ -1,7 +1,7 @@
-# 🍅 Pomodoro Timer App
-Pomodoro Timer là ứng dụng được phát triển bằng React Native Expo, giúp bạn quản lý thời gian làm việc và nghỉ ngơi một cách khoa học và hiệu quả.
+# 🍅 Pomodoro Time App
+- Pomodoro Timer là ứng dụng được phát triển bằng React Native Expo, giúp bạn quản lý thời gian làm việc và nghỉ ngơi một cách khoa học và hiệu quả.
 
-## ✨ Tính năng
+##  Các tính năng
 ### Yêu cầu tối thiểu 
 - **🕒Chế độ Pomodoro: Làm việc (25 phút) và Nghỉ ngơi (5 phút)**
 - **Chỉnh được giờ làm việc và nghỉ ngơi**
@@ -17,7 +17,7 @@ Pomodoro Timer là ứng dụng được phát triển bằng React Native Expo,
 -  **Màn hình lịch sử phiên hôm nay**
 -  **Reponsive UI/UX**
 
-## 🚀 Cài đặt và Chạy
+##  Cấu hình và cài đặt
 
 ### 1. Cài đặt dependencies
 ```bash
