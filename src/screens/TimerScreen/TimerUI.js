@@ -136,8 +136,8 @@ export const TimerUI = ({
 
       {/* Summary */}
       <View style={styles.summaryBox}>
-        <Text style={styles.summaryText}>🔥 Work: {workSessions}</Text>
-        <Text style={styles.summaryText}>☕ Break: {breakSessions}</Text>
+        <Text style={styles.summaryText}>💻 Work: {workSessions}</Text>
+        <Text style={styles.summaryText}>🛏️ Break: {breakSessions}</Text>
       </View>
 
       {/* History */}

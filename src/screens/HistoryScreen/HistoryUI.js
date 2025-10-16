@@ -27,7 +27,7 @@ export const HistoryUI = ({
     <View style={styles.statsGrid}>
       <View style={styles.statCard}>
         <View style={styles.statIconContainer}>
-          <Text style={styles.statIcon}></Text>
+          <Text style={styles.statIcon}>💻</Text>
         </View>
         <Text style={styles.statValue}>{todayStats.workSessions}</Text>
         <Text style={styles.statLabel}>Phiên làm việc</Text>
@@ -35,7 +35,7 @@ export const HistoryUI = ({
 
       <View style={styles.statCard}>
         <View style={styles.statIconContainer}>
-          <Text style={styles.statIcon}>☕</Text>
+          <Text style={styles.statIcon}>🛏️</Text>
         </View>
         <Text style={styles.statValue}>{todayStats.breakSessions}</Text>
         <Text style={styles.statLabel}>Phiên nghỉ</Text>
@@ -75,9 +75,8 @@ export const HistoryUI = ({
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.chartContent}>
             {chartData.map((data, index) => {
-              const totalHeight = ((data.work + data.break) / maxValue) * 120;
-              const workHeight = (data.work / (data.work + data.break)) * totalHeight;
-              const breakHeight = totalHeight - workHeight;
+              const workHeight = (data.work / maxValue) * 120;
+              const breakHeight = (data.break / maxValue) * 120;
 
               return (
                 <View key={index} style={styles.hourBar}>
@@ -87,7 +86,7 @@ export const HistoryUI = ({
                         style={[
                           styles.barSegment,
                           styles.barWork,
-                          { height: workHeight },
+                          { height: Math.max(workHeight, 20) },
                         ]}
                       >
                         <Text style={styles.barValue}>{data.work}</Text>
@@ -98,7 +97,7 @@ export const HistoryUI = ({
                         style={[
                           styles.barSegment,
                           styles.barBreak,
-                          { height: breakHeight },
+                          { height: Math.max(breakHeight, 20) },
                         ]}
                       >
                         <Text style={styles.barValue}>{data.break}</Text>
@@ -111,6 +110,16 @@ export const HistoryUI = ({
             })}
           </View>
         </ScrollView>
+        <View style={styles.chartLegend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#4A90E2' }]} />
+            <Text style={styles.legendText}>Làm việc</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#27AE60' }]} />
+            <Text style={styles.legendText}>Nghỉ ngơi</Text>
+          </View>
+        </View>
       </View>
     );
   };
@@ -124,23 +133,34 @@ export const HistoryUI = ({
         <Text style={styles.chartTitle}>Thống kê 7 ngày</Text>
         <View style={styles.weekChartContent}>
           {chartData.map((data, index) => {
-            const barHeight = (data.total / maxValue) * 100;
+            const workHeight = (data.work / maxValue) * 100;
+            const breakHeight = (data.break / maxValue) * 100;
 
             return (
               <View key={index} style={styles.dayBar}>
                 <View style={styles.barWrapper}>
-                  <View
-                    style={[
-                      styles.weekBar,
-                      {
-                        height: Math.max(barHeight, 4),
-                        backgroundColor:
-                          data.total > 0 ? '#4A90E2' : '#E8F4FF',
-                      },
-                    ]}
-                  >
-                    {data.total > 0 && (
-                      <Text style={styles.weekBarValue}>{data.total}</Text>
+                  <View style={styles.weekBarStack}>
+                    {data.work > 0 && (
+                      <View
+                        style={[
+                          styles.weekBar,
+                          styles.weekBarWork,
+                          { height: Math.max(workHeight, 4) },
+                        ]}
+                      >
+                        <Text style={styles.weekBarValue}>{data.work}</Text>
+                      </View>
+                    )}
+                    {data.break > 0 && (
+                      <View
+                        style={[
+                          styles.weekBar,
+                          styles.weekBarBreak,
+                          { height: Math.max(breakHeight, 4) },
+                        ]}
+                      >
+                        <Text style={styles.weekBarValue}>{data.break}</Text>
+                      </View>
                     )}
                   </View>
                 </View>
@@ -153,18 +173,31 @@ export const HistoryUI = ({
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#4A90E2' }]} />
-            <Text style={styles.legendText}>Tổng phiên</Text>
+            <Text style={styles.legendText}>Làm việc</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#27AE60' }]} />
+            <Text style={styles.legendText}>Nghỉ ngơi</Text>
           </View>
         </View>
       </View>
     );
   };
 
-  const renderSessionsList = () => {
+  const formatSessionTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const renderSessionsTable = () => {
     if (sessions.length === 0) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📭</Text>
+          <Text style={styles.emptyIcon}>🔭</Text>
           <Text style={styles.emptyText}>Chưa có phiên nào</Text>
           <Text style={styles.emptySubtext}>
             Bắt đầu timer để ghi nhận hoạt động
@@ -174,39 +207,57 @@ export const HistoryUI = ({
     }
 
     return (
-      <View style={styles.sessionsList}>
-        <Text style={styles.sessionsTitle}>
+      <View style={styles.tableContainer}>
+        <Text style={styles.tableTitle}>
           Lịch sử ({sessions.length} phiên)
         </Text>
-        {sessions
-          .slice()
-          .reverse()
-          .map((session, index) => (
-            <View
-              key={index}
-              style={[
-                styles.sessionCard,
-                session.type === 'WORK'
-                  ? styles.sessionWork
-                  : styles.sessionBreak,
-              ]}
-            >
-              <View style={styles.sessionHeader}>
-                <View style={styles.sessionTypeContainer}>
-                  <Text style={styles.sessionIcon}>
-                    {session.type === 'WORK' ? '🔥' : '☕'}
+        
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.colType]}>Phiên</Text>
+          <Text style={[styles.tableHeaderText, styles.colTime]}>Bắt đầu</Text>
+          <Text style={[styles.tableHeaderText, styles.colTime]}>Kết thúc</Text>
+          <Text style={[styles.tableHeaderText, styles.colDuration]}>Thời gian</Text>
+        </View>
+
+        {/* Table Rows */}
+        <ScrollView style={styles.tableBody}>
+          {sessions
+            .slice()
+            .reverse()
+            .map((session, index) => {
+              const startTime = new Date(session.date);
+              const endTime = new Date(startTime.getTime() + session.duration * 1000);
+              
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.tableRow,
+                    index % 2 === 0 && styles.tableRowEven,
+                  ]}
+                >
+                  <View style={styles.colType}>
+                    <Text style={styles.sessionIcon}>
+                      {session.type === 'WORK' ? '💻' : '🛏️'}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {session.type === 'WORK' ? 'Làm việc' : 'Nghỉ ngơi'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.tableCell, styles.colTime]}>
+                    {formatSessionTime(startTime)}
                   </Text>
-                  <Text style={styles.sessionType}>
-                    {session.type === 'WORK' ? 'Làm việc' : 'Nghỉ ngơi'}
+                  <Text style={[styles.tableCell, styles.colTime]}>
+                    {formatSessionTime(endTime)}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.colDuration, styles.durationText]}>
+                    {formatDuration(session.duration)}
                   </Text>
                 </View>
-                <Text style={styles.sessionDuration}>
-                  {formatDuration(session.duration)}
-                </Text>
-              </View>
-              <Text style={styles.sessionTime}>{formatTime(session.date)}</Text>
-            </View>
-          ))}
+              );
+            })}
+        </ScrollView>
       </View>
     );
   };
@@ -273,8 +324,8 @@ export const HistoryUI = ({
         {/* Chart */}
         {viewMode === 'today' ? renderTodayChart() : renderWeekChart()}
 
-        {/* Sessions List */}
-        {renderSessionsList()}
+        {/* Table - Only show for Today */}
+        {viewMode === 'today' && renderSessionsTable()}
       </ScrollView>
     </View>
   );
@@ -440,8 +491,9 @@ const styles = StyleSheet.create({
   chartContent: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 140,
+    height: 200,
     gap: 12,
+    paddingBottom: 16,
   },
   hourBar: {
     alignItems: 'center',
@@ -450,6 +502,7 @@ const styles = StyleSheet.create({
   barStack: {
     gap: 4,
     alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   barSegment: {
     width: 32,
@@ -473,6 +526,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#7f8c8d',
     fontWeight: '500',
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#ecf0f1',
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#7f8c8d',
   },
   weekChartContent: {
     flexDirection: 'row',
@@ -499,6 +575,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 4,
   },
+  weekBarStack: {
+    gap: 4,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  weekBarWork: {
+    backgroundColor: '#4A90E2',
+  },
+  weekBarBreak: {
+    backgroundColor: '#27AE60',
+  },
   weekBarValue: {
     color: '#fff',
     fontSize: 12,
@@ -513,82 +600,77 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#95a5a6',
   },
-  chartLegend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+  // Table Styles
+  tableContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#7f8c8d',
-  },
-  sessionsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  sessionsTitle: {
+  tableTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#2c3e50',
-    marginBottom: 12,
-  },
-  sessionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
   },
-  sessionWork: {
-    borderLeftColor: '#4A90E2',
-  },
-  sessionBreak: {
-    borderLeftColor: '#27AE60',
-  },
-  sessionHeader: {
+  tableHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#f6f8fa',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#e1e8ed',
   },
-  sessionTypeContainer: {
+  tableHeaderText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2c3e50',
+  },
+  tableBody: {
+    maxHeight: 400,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  tableRowEven: {
+    backgroundColor: '#fafbfc',
+  },
+  tableCell: {
+    fontSize: 13,
+    color: '#2c3e50',
+  },
+  colType: {
+    flex: 2.5,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  colTime: {
+    flex: 2,
+  },
+  colDuration: {
+    flex: 1.5,
+    textAlign: 'right',
+  },
   sessionIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
-  sessionType: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#2c3e50',
-  },
-  sessionDuration: {
-    fontSize: 15,
+  durationText: {
     fontWeight: '700',
     color: '#4A90E2',
-  },
-  sessionTime: {
-    fontSize: 13,
-    color: '#95a5a6',
   },
   emptyContainer: {
     alignItems: 'center',
